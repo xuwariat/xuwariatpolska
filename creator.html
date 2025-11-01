@@ -1,258 +1,112 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kreator danych – Dowód PL</title>
+  <link rel="stylesheet" href="assets/style.css">
   <base href="/dowodplska/">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Creator — dodaj dane</title>
   <style>
-    body{font-family:Arial,Helvetica,sans-serif;background:#f4f6fb;padding:20px;color:#222}
-    .wrap{max-width:720px;margin:24px auto;background:#fff;padding:18px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.06)}
-    h1{font-size:20px;margin:0 0 12px}
-    label{display:block;margin:10px 0 6px;font-weight:600}
-    input[type=text], input[type=date], select, textarea {width:100%;padding:8px;border:1px solid #ddd;border-radius:6px}
-    .row{display:flex;gap:12px}
-    .col{flex:1}
-    .small{max-width:200px}
-    .preview{width:140px;height:180px;border-radius:6px;background:#eee;display:flex;align-items:center;justify-content:center;overflow:hidden}
-    .preview img{width:100%;height:100%;object-fit:cover}
-    .buttons{margin-top:14px;display:flex;gap:10px}
-    button{padding:10px 14px;border:0;background:#014A93;color:#fff;border-radius:8px;cursor:pointer}
-    button.secondary{background:#777}
-    .hint{color:#666;font-size:13px;margin-top:6px}
-    .success{color:green;margin-top:8px}
+    body { background:#101317; color:white; font-family:sans-serif; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
+    form { max-width:400px; width:100%; display:flex; flex-direction:column; gap:10px; }
+    input, select, button { padding:10px; border:none; border-radius:10px; }
+    button { background:#2563eb; color:white; cursor:pointer; font-weight:bold; }
+    button:hover { background:#1d4ed8; }
+    img { width:120px; height:120px; object-fit:cover; border-radius:10px; margin-top:5px; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>Tworzenie danych testowych (creator)</h1>
+  <h1>🪪 Kreator danych</h1>
+  <form id="creatorForm">
+    <input type="text" id="name" placeholder="Imię" required>
+    <input type="text" id="surname" placeholder="Nazwisko" required>
+    <input type="text" id="familyName" placeholder="Nazwisko rodowe">
+    <input type="text" id="fathersName" placeholder="Imię ojca">
+    <input type="text" id="mothersName" placeholder="Imię matki">
+    <input type="number" id="day" placeholder="Dzień urodzenia (1–31)" min="1" max="31" required>
+    <input type="number" id="month" placeholder="Miesiąc (1–12)" min="1" max="12" required>
+    <input type="number" id="year" placeholder="Rok urodzenia (np. 1998)" min="1900" max="2100" required>
+    <select id="sex" required>
+      <option value="">Płeć</option>
+      <option value="m">Mężczyzna</option>
+      <option value="k">Kobieta</option>
+    </select>
+    <label for="imageInput">Zdjęcie (opcjonalnie):</label>
+    <input type="file" id="imageInput" accept="image/*">
+    <img id="preview" src="" alt="" hidden>
+    <button type="submit">Zapisz i pokaż dowód</button>
+  </form>
 
-    <label>Imię</label>
-    <input id="in_name" type="text" placeholder="Jan">
+  <script>
+    const form = document.getElementById("creatorForm");
+    const imageInput = document.getElementById("imageInput");
+    const preview = document.getElementById("preview");
+    let imageBase64 = null;
 
-    <label>Nazwisko</label>
-    <input id="in_surname" type="text" placeholder="Kowalski">
-
-    <div class="row">
-      <div class="col">
-        <label>Data urodzenia</label>
-        <input id="in_birthday" type="date">
-      </div>
-      <div class="col small">
-        <label>Płeć</label>
-        <select id="in_sex">
-          <option value="m">Mężczyzna</option>
-          <option value="k">Kobieta</option>
-        </select>
-      </div>
-    </div>
-
-    <label>PESEL (opcjonalnie — jeśli puste zostanie wygenerowany)</label>
-    <input id="in_pesel" type="text" maxlength="11" placeholder="12345678901">
-
-    <label>Seria i numer (opcjonalnie)</label>
-    <input id="in_series" type="text" placeholder="OOGT 55115">
-
-    <label>Zdjęcie (jpeg/png)</label>
-    <div style="display:flex;gap:12px;align-items:center">
-      <div class="preview" id="imgPreview">brak zdjęcia</div>
-      <div style="flex:1">
-        <input id="in_image" type="file" accept="image/*">
-        <div class="hint">Zdjęcie zostanie zapisane lokalnie w IndexedDB i wyświetlone na karcie.</div>
-      </div>
-    </div>
-
-    <div class="buttons">
-      <button id="saveBtn">Zapisz i pokaż</button>
-      <button id="saveStay" class="secondary">Zapisz i zostań</button>
-      <button id="clear" class="secondary">Wyczyść dane</button>
-    </div>
-
-    <div id="msg" class="success" role="status" aria-live="polite"></div>
-  </div>
-
-<script>
-(function(){
-  const inName = document.getElementById('in_name');
-  const inSurname = document.getElementById('in_surname');
-  const inBirthday = document.getElementById('in_birthday');
-  const inSex = document.getElementById('in_sex');
-  const inPesel = document.getElementById('in_pesel');
-  const inSeries = document.getElementById('in_series');
-  const inImage = document.getElementById('in_image');
-  const imgPreview = document.getElementById('imgPreview');
-  const saveBtn = document.getElementById('saveBtn');
-  const saveStay = document.getElementById('saveStay');
-  const clearBtn = document.getElementById('clear');
-  const msg = document.getElementById('msg');
-
-  // helper: idb simple wrapper
-  function openDb(){
-    return new Promise((res, rej) => {
-      const r = indexedDB.open('fobywatel', 1);
-      r.onupgradeneeded = e => {
-        const db = e.target.result;
-        if (!db.objectStoreNames.contains('data')) db.createObjectStore('data', { keyPath: 'key' });
+    // podgląd zdjęcia
+    imageInput.addEventListener("change", () => {
+      const file = imageInput.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        imageBase64 = e.target.result;
+        preview.src = imageBase64;
+        preview.hidden = false;
       };
-      r.onsuccess = e => res(e.target.result);
-      r.onerror = e => rej(e.target.error);
+      reader.readAsDataURL(file);
     });
-  }
 
-  function putImage(base64){
-    return openDb().then(db => {
+    // funkcje do IndexedDB
+    function getDb(){
+      return new Promise((resolve, reject) => {
+        const r = indexedDB.open('fobywatel', 1);
+        r.onupgradeneeded = e => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains('data')){
+            db.createObjectStore('data', { keyPath: 'data' });
+          }
+        };
+        r.onsuccess = e => resolve(e.target.result);
+        r.onerror = e => reject(e.target.error);
+      });
+    }
+    function saveData(db, data){
       return new Promise((resolve, reject) => {
         const tx = db.transaction('data','readwrite');
         const store = tx.objectStore('data');
-        store.put({ key: 'image', image: base64 });
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
+        const req = store.put(data);
+        req.onsuccess = () => resolve();
+        req.onerror = e => reject(e.target.error);
       });
-    });
-  }
-
-  function readImage(){
-    return openDb().then(db => {
-      return new Promise((resolve,reject) => {
-        const tx = db.transaction('data','readonly');
-        const store = tx.objectStore('data');
-        const req = store.get('image');
-        req.onsuccess = () => resolve(req.result ? req.result.image : null);
-        req.onerror = () => reject(req.error);
-      });
-    });
-  }
-
-  function previewBase64(base){
-    imgPreview.innerHTML = '';
-    if (!base) {
-      imgPreview.textContent = 'brak zdjęcia';
-      return;
-    }
-    const img = document.createElement('img');
-    img.src = base;
-    imgPreview.appendChild(img);
-  }
-
-  // load existing preview if present
-  readImage().then(base => previewBase64(base)).catch(()=>{});
-
-  inImage.addEventListener('change', e => {
-    const f = e.target.files && e.target.files[0];
-    if (!f) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      previewBase64(ev.target.result);
-      // keep base in a temp variable
-      inImage._base = ev.target.result;
-    };
-    reader.readAsDataURL(f);
-  });
-
-  function generatePeselFromDate(d, sex){
-    // very simple generator matching your logic pattern in gotNewData: uses date and filler digits
-    const year = d.getFullYear();
-    let month = d.getMonth() + 1;
-    const day = d.getDate();
-    let m = month;
-    if (year >= 2000) m = 20 + month;
-    const mm = (m < 10 ? '0'+m : ''+m);
-    const dd = (day < 10 ? '0'+day : ''+day);
-    const yy = (''+year).slice(2);
-    const later = (sex === 'm' ? '0295' : '0382');
-    return yy + mm + dd + later + '7';
-  }
-
-  function saveAll(redirect){
-    // read values
-    const name = inName.value.trim();
-    const surname = inSurname.value.trim();
-    const bday = inBirthday.value ? new Date(inBirthday.value) : null;
-    const sex = inSex.value;
-    const pesel = inPesel.value.trim();
-    const series = inSeries.value.trim();
-
-    if (!name || !surname || !bday){
-      msg.textContent = 'Wypełnij imię, nazwisko i datę urodzenia.';
-      return;
     }
 
-    const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
-    const birthDayString = bday.toLocaleDateString('pl-PL', options);
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
 
-    // compute givenDate and expiryDate similar to gotNewData rules
-    const given = new Date(bday);
-    given.setFullYear(given.getFullYear() + 18);
-    const givenStr = given.toLocaleDateString('pl-PL', options);
-
-    const expiry = new Date(given);
-    expiry.setFullYear(expiry.getFullYear() + 5);
-    const expiryStr = expiry.toLocaleDateString('pl-PL', options);
-
-    // pesel
-    const finalPesel = pesel || generatePeselFromDate(bday, sex);
-
-    // series: if empty generate-ish
-    let finalSeries = series;
-    if (!finalSeries){
-      const letters = "ABCDEFGHIJKLMNOPQRSTUWXYZ".split('');
-      let s = '';
-      for (let i=0;i<4;i++) s += letters[Math.floor(Math.random()*letters.length)];
-      s += ' ';
-      for (let i=0;i<5;i++) s += Math.floor(Math.random()*10);
-      finalSeries = s;
-    }
-
-    // write localStorage keys matching Twojego projektu
-    localStorage.setItem('pesel', finalPesel);
-    localStorage.setItem('birthDay', birthDayString);
-    localStorage.setItem('givenDate', givenStr);
-    localStorage.setItem('expiryDate', expiryStr);
-    localStorage.setItem('seriesAndNumber', finalSeries);
-    localStorage.setItem('name', name);
-    localStorage.setItem('surname', surname);
-    localStorage.setItem('sex', sex);
-    localStorage.setItem('familyName', ''); // opcjonalne
-    localStorage.setItem('fathersName', '');
-    localStorage.setItem('mothersName', '');
-    localStorage.setItem('address1', '');
-    localStorage.setItem('address2', '');
-    localStorage.setItem('city', '');
-
-    // save image to IndexedDB if provided or inImage._base exists
-    const base = inImage._base || null;
-    const savePromise = base ? putImage(base) : Promise.resolve();
-
-    savePromise.then(() => {
-      msg.textContent = 'Zapisano dane lokalnie ✔';
-      setTimeout(()=> msg.textContent = '', 2500);
-
-      // optionally redirect to card or documents
-      if (redirect) location.href = redirect + '?' + (new URLSearchParams(window.location.search));
-    }).catch(err => {
-      msg.textContent = 'Błąd zapisu: ' + err;
-      console.error(err);
-    });
-  }
-
-  saveBtn.addEventListener('click', ()=> saveAll('card.html'));
-  saveStay.addEventListener('click', ()=> saveAll(null));
-  clearBtn.addEventListener('click', ()=> {
-    // clear keys
-    ['pesel','birthDay','givenDate','expiryDate','seriesAndNumber','name','surname','sex'].forEach(k=> localStorage.removeItem(k));
-    // remove image
-    openDb().then(db=>{
-      const tx = db.transaction('data','readwrite');
-      tx.objectStore('data').delete('image');
-      tx.oncomplete = ()=> {
-        previewBase64(null);
-        msg.textContent = 'Wyczyszczono dane';
-        setTimeout(()=> msg.textContent = '', 1800);
+      const data = {
+        name: form.name.value,
+        surname: form.surname.value,
+        familyName: form.familyName.value,
+        fathersName: form.fathersName.value,
+        mothersName: form.mothersName.value,
+        day: parseInt(form.day.value),
+        month: parseInt(form.month.value),
+        year: parseInt(form.year.value),
+        sex: form.sex.value
       };
-    });
-  });
 
-})();
-</script>
+      // zapisz w localStorage
+      for (const key in data) localStorage.setItem(key, data[key]);
+
+      // zapisz w IndexedDB (zdjęcie)
+      const db = await getDb();
+      if (imageBase64){
+        await saveData(db, { data: 'image', image: imageBase64 });
+      }
+
+      // przekierowanie na kartę
+      window.location.href = "/dowodplska/card.html";
+    });
+  </script>
 </body>
 </html>
