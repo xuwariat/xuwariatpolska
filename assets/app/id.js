@@ -14,7 +14,7 @@ if (date.getHours() >= 18){
 document.querySelector(".welcome").innerHTML = welcome;
 
 function toHome(){
-    location.href = '/documents.html?' + params;
+    location.href = '/dowodplska/documents.html?' + params;
 }
 
 var input = document.querySelector(".password_input");
@@ -70,4 +70,5 @@ eye.addEventListener('click', () => {
         classlist.add("eye_close");
         input.value = original;
     }
+
 })
