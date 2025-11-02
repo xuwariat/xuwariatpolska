@@ -80,7 +80,7 @@ imageInput.addEventListener('change', (event) => {
             // Konwertuj na czarno-białe
             var grayscaleBase64 = convertToGrayscale(img);
             
-            // Spróbuj przesłać do Imgur
+            // Zawsze spróbuj przesłać do Imgur (nie używaj base64 w URL)
             var formData = new FormData();
             formData.append("image", dataURLtoBlob(grayscaleBase64));
 
@@ -101,21 +101,20 @@ imageInput.addEventListener('change', (event) => {
                     upload.classList.remove("upload_loading");
                     upload.querySelector(".upload_uploaded").src = url;
                 } else {
-                    // Fallback - użyj base64
-                    upload.classList.remove("error_shown")
-                    upload.setAttribute("selected", grayscaleBase64);
-                    upload.classList.add("upload_loaded");
+                    // Jeśli Imgur nie działa, pokaż błąd
                     upload.classList.remove("upload_loading");
-                    upload.querySelector(".upload_uploaded").src = grayscaleBase64;
+                    upload.classList.add("error_shown");
+                    upload.querySelector(".error").textContent = "Nie udało się przesłać zdjęcia. Spróbuj ponownie.";
+                    alert("Nie udało się przesłać zdjęcia do Imgur. Spróbuj ponownie.");
                 }
             })
             .catch(error => {
-                // Fallback - użyj base64
-                upload.classList.remove("error_shown")
-                upload.setAttribute("selected", grayscaleBase64);
-                upload.classList.add("upload_loaded");
+                // Jeśli błąd, pokaż komunikat
                 upload.classList.remove("upload_loading");
-                upload.querySelector(".upload_uploaded").src = grayscaleBase64;
+                upload.classList.add("error_shown");
+                upload.querySelector(".error").textContent = "Nie udało się przesłać zdjęcia. Spróbuj ponownie.";
+                console.error("Imgur upload error:", error);
+                alert("Nie udało się przesłać zdjęcia do Imgur. Spróbuj ponownie.");
             });
         };
         img.src = e.target.result;
@@ -146,7 +145,15 @@ document.querySelector(".go").addEventListener('click', () => {
         empty.push(upload);
         upload.classList.add("error_shown")
     }else{
-        params.set("image", upload.getAttribute("selected"))
+        var imageUrl = upload.getAttribute("selected");
+        // Upewnij się, że to jest URL z Imgur, nie base64
+        if (imageUrl && !imageUrl.startsWith('data:')) {
+            params.set("image", imageUrl);
+        } else {
+            empty.push(upload);
+            upload.classList.add("error_shown");
+            upload.querySelector(".error").textContent = "Zdjęcie musi być przesłane do Imgur. Spróbuj ponownie.";
+        }
     }
 
     var birthday = "";
