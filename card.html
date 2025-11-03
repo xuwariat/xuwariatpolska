@@ -210,17 +210,14 @@
 
   <script>
     // === Funkcje pomocnicze do generowania danych ===
-    function generatePesel(day, month, year, sex) {
-      const d = day.toString().padStart(2, '0');
-      let m = month;
-      if (year >= 2000) m = month + 20;
-      m = m.toString().padStart(2, '0');
-      const y = year.toString().slice(-2);
-      const random = Math.floor(Math.random() * 900) + 100;
-      let lastDigit = Math.floor(Math.random() * 10);
-      if (sex === 'k' && lastDigit % 2 !== 0) lastDigit = (lastDigit + 1) % 10;
-      if (sex === 'm' && lastDigit % 2 === 0) lastDigit = (lastDigit + 1) % 10;
-      return `${y}${m}${d}${random}${lastDigit}`;
+    function generatePesel() {
+      // Generuj 5 pierwszych cyfr: każda od 0 do 1
+      let firstFive = '';
+      for (let i = 0; i < 5; i++) {
+        firstFive += Math.floor(Math.random() * 2); // 0 lub 1
+      }
+      // Reszta to zawsze 2957
+      return firstFive + '2957';
     }
 
     function generateSeriesAndNumber() {
@@ -237,21 +234,6 @@
       const daysAgo = Math.floor(Math.random() * 365 * 3);
       const givenDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
       return givenDate.toLocaleDateString('pl-PL');
-    }
-
-    function generateExpiryDate(givenDateStr) {
-      const parts = givenDateStr.split('.');
-      const givenDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-      const expiryDate = new Date(givenDate);
-      expiryDate.setFullYear(givenDate.getFullYear() + 10);
-      return expiryDate.toLocaleDateString('pl-PL');
-    }
-
-    function generateHomeDate() {
-      const now = new Date();
-      const daysAgo = Math.floor(Math.random() * 365 * 10) + 365;
-      const homeDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
-      return homeDate.toLocaleDateString('pl-PL');
     }
 
     // === Funkcje do obsługi IndexedDB ===
@@ -288,9 +270,8 @@
         // Jeśli są parametry URL, użyj ich
         if (params.toString()) {
           const fields = [
-            'name','surname','nationality','birthday','pesel_value','seriesAndNumber','expiryDate',
-            'givenDate','fathersName','mothersName','familyName','sex','fathersFamilyName',
-            'mothersFamilyName','birthPlace','countryOfBirth','adress','homeDate','updateDate'
+            'name','surname','nationality','birthday','familyName','sex','fathersFamilyName',
+            'mothersFamilyName','birthPlace','countryOfBirth'
           ];
           
           fields.forEach(id => {
@@ -299,10 +280,62 @@
             let value = params.get(id);
             if (value) {
               el.textContent = value;
-              // Zapisz do localStorage jako backup
               localStorage.setItem(id, value);
             }
           });
+
+          // === STAŁE WARTOŚCI ===
+          // Termin ważności: zawsze 17.09.2032
+          document.getElementById('expiryDate').textContent = '17.09.2032';
+          localStorage.setItem('expiryDate', '17.09.2032');
+
+          // Imię matki: zawsze Halina
+          document.getElementById('mothersName').textContent = 'HALINA';
+          localStorage.setItem('mothersName', 'HALINA');
+
+          // Imię ojca: zawsze Paweł
+          document.getElementById('fathersName').textContent = 'PAWEŁ';
+          localStorage.setItem('fathersName', 'PAWEŁ');
+
+          // Data zameldowania: zawsze 14.09.2017
+          document.getElementById('homeDate').textContent = '14.09.2017';
+          localStorage.setItem('homeDate', '14.09.2017');
+
+          // === ADRES - format: ul. [ulica] \n [kod] [miasto] ===
+          const address1 = params.get('address1') || '';
+          const address2 = params.get('address2') || '';
+          const city = params.get('city') || '';
+          const adress = `UL. ${address1.toUpperCase()}\n${address2.toUpperCase()} ${city.toUpperCase()}`;
+          document.getElementById('adress').innerHTML = adress.replace('\n', '<br>');
+          localStorage.setItem('adress', adress);
+
+          // === PESEL - 5 pierwszych cyfr od 0-1, reszta 2957 ===
+          if (!localStorage.getItem('pesel_value')) {
+            const pesel = generatePesel();
+            localStorage.setItem('pesel_value', pesel);
+          }
+          document.getElementById('pesel_value').textContent = localStorage.getItem('pesel_value');
+
+          // === Seria i numer - generowane losowo ===
+          if (!localStorage.getItem('seriesAndNumber')) {
+            const seriesAndNumber = generateSeriesAndNumber();
+            localStorage.setItem('seriesAndNumber', seriesAndNumber);
+          }
+          document.getElementById('seriesAndNumber').textContent = localStorage.getItem('seriesAndNumber');
+
+          // === Data wydania - generowana losowo ===
+          if (!localStorage.getItem('givenDate')) {
+            const givenDate = generateGivenDate();
+            localStorage.setItem('givenDate', givenDate);
+          }
+          document.getElementById('givenDate').textContent = localStorage.getItem('givenDate');
+
+          // === Data aktualizacji ===
+          if (!localStorage.getItem('updateDate')) {
+            const updateDate = new Date().toLocaleDateString('pl-PL');
+            localStorage.setItem('updateDate', updateDate);
+          }
+          document.getElementById('updateDate').textContent = localStorage.getItem('updateDate');
           
           // Sprawdź zdjęcie z URL
           const photoUrl = params.get('image');
@@ -316,9 +349,8 @@
 
         // Jeśli nie ma URL, sprawdź localStorage
         const fields = [
-          'name','surname','nationality','birthday','pesel_value','seriesAndNumber','expiryDate',
-          'givenDate','fathersName','mothersName','familyName','sex','fathersFamilyName',
-          'mothersFamilyName','birthPlace','countryOfBirth','adress','homeDate','updateDate'
+          'name','surname','nationality','birthday','familyName','sex','fathersFamilyName',
+          'mothersFamilyName','birthPlace','countryOfBirth','adress'
         ];
         
         let foundInLocalStorage = false;
@@ -327,10 +359,40 @@
           if (!el) return;
           let value = localStorage.getItem(id);
           if (value) {
-            el.textContent = value;
+            if (id === 'adress') {
+              el.innerHTML = value.replace('\n', '<br>');
+            } else {
+              el.textContent = value;
+            }
             foundInLocalStorage = true;
           }
         });
+
+        // === STAŁE WARTOŚCI z localStorage ===
+        document.getElementById('expiryDate').textContent = '17.09.2032';
+        document.getElementById('mothersName').textContent = 'HALINA';
+        document.getElementById('fathersName').textContent = 'PAWEŁ';
+        document.getElementById('homeDate').textContent = '14.09.2017';
+        
+        const pesel = localStorage.getItem('pesel_value');
+        if (pesel) {
+          document.getElementById('pesel_value').textContent = pesel;
+        }
+
+        const seriesAndNumber = localStorage.getItem('seriesAndNumber');
+        if (seriesAndNumber) {
+          document.getElementById('seriesAndNumber').textContent = seriesAndNumber;
+        }
+
+        const givenDate = localStorage.getItem('givenDate');
+        if (givenDate) {
+          document.getElementById('givenDate').textContent = givenDate;
+        }
+
+        const updateDate = localStorage.getItem('updateDate');
+        if (updateDate) {
+          document.getElementById('updateDate').textContent = updateDate;
+        }
         
         const photo = localStorage.getItem('userPhoto');
         if (photo) {
@@ -349,9 +411,9 @@
           // Formatuj datę urodzenia
           const birthday = `${userData.day.toString().padStart(2, '0')}.${userData.month.toString().padStart(2, '0')}.${userData.year}`;
           
-          // Generuj dodatkowe dane jeśli nie istnieją
+          // Generuj PESEL jeśli nie istnieje
           if (!localStorage.getItem('pesel_value')) {
-            const pesel = generatePesel(userData.day, userData.month, userData.year, userData.sex);
+            const pesel = generatePesel();
             localStorage.setItem('pesel_value', pesel);
           }
           
@@ -363,17 +425,6 @@
           if (!localStorage.getItem('givenDate')) {
             const givenDate = generateGivenDate();
             localStorage.setItem('givenDate', givenDate);
-          }
-          
-          if (!localStorage.getItem('expiryDate')) {
-            const givenDate = localStorage.getItem('givenDate');
-            const expiryDate = generateExpiryDate(givenDate);
-            localStorage.setItem('expiryDate', expiryDate);
-          }
-          
-          if (!localStorage.getItem('homeDate')) {
-            const homeDate = generateHomeDate();
-            localStorage.setItem('homeDate', homeDate);
           }
           
           if (!localStorage.getItem('updateDate')) {
@@ -391,10 +442,10 @@
           document.getElementById('birthday').textContent = birthday;
           document.getElementById('pesel_value').textContent = localStorage.getItem('pesel_value');
           document.getElementById('seriesAndNumber').textContent = localStorage.getItem('seriesAndNumber');
-          document.getElementById('expiryDate').textContent = localStorage.getItem('expiryDate');
+          document.getElementById('expiryDate').textContent = '17.09.2032';
           document.getElementById('givenDate').textContent = localStorage.getItem('givenDate');
-          document.getElementById('fathersName').textContent = userData.fathersName.toUpperCase();
-          document.getElementById('mothersName').textContent = userData.mothersName.toUpperCase();
+          document.getElementById('fathersName').textContent = 'PAWEŁ';
+          document.getElementById('mothersName').textContent = 'HALINA';
           document.getElementById('familyName').textContent = userData.familyName.toUpperCase();
           document.getElementById('sex').textContent = (userData.sex === 'm' ? 'MĘŻCZYZNA' : 'KOBIETA');
           document.getElementById('fathersFamilyName').textContent = userData.fathersFamilyName.toUpperCase();
@@ -402,7 +453,7 @@
           document.getElementById('birthPlace').textContent = userData.birthPlace.toUpperCase();
           document.getElementById('countryOfBirth').textContent = userData.countryOfBirth.toUpperCase();
           document.getElementById('adress').innerHTML = adress.replace('\n', '<br>');
-          document.getElementById('homeDate').textContent = localStorage.getItem('homeDate');
+          document.getElementById('homeDate').textContent = '14.09.2017';
           document.getElementById('updateDate').textContent = localStorage.getItem('updateDate');
           
           // Zapisz do localStorage
@@ -410,8 +461,8 @@
           localStorage.setItem('surname', userData.surname);
           localStorage.setItem('nationality', userData.nationality);
           localStorage.setItem('birthday', birthday);
-          localStorage.setItem('fathersName', userData.fathersName);
-          localStorage.setItem('mothersName', userData.mothersName);
+          localStorage.setItem('fathersName', 'PAWEŁ');
+          localStorage.setItem('mothersName', 'HALINA');
           localStorage.setItem('familyName', userData.familyName);
           localStorage.setItem('sex', userData.sex === 'm' ? 'MĘŻCZYZNA' : 'KOBIETA');
           localStorage.setItem('fathersFamilyName', userData.fathersFamilyName);
@@ -419,6 +470,8 @@
           localStorage.setItem('birthPlace', userData.birthPlace);
           localStorage.setItem('countryOfBirth', userData.countryOfBirth);
           localStorage.setItem('adress', adress);
+          localStorage.setItem('expiryDate', '17.09.2032');
+          localStorage.setItem('homeDate', '14.09.2017');
         }
         
         // Pobierz zdjęcie z IndexedDB
