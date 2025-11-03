@@ -1,4 +1,3 @@
-// Funkcja skalowania i konwersji zdjęcia na czarno-białe
 function scaleAndConvertToGrayscale(imageElement, maxWidth, maxHeight) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -108,17 +107,19 @@ imageInput.addEventListener('change', (event) => {
                 canvasToBlob(canvas, 0.9).then(blob => {
                     if (!blob) throw new Error('Failed to create blob from canvas');
 
+                    // 📤 Upload do Cloudinary
                     var formData = new FormData();
-                    formData.append("image", blob, "photo.jpg");
+                    formData.append("file", blob);
+                    formData.append("upload_preset", "unsignedpreset");
+                    formData.append("cloud_name", "dtnw378yo");
 
-                    fetch('https://api.imgur.com/3/image', {
-                        method: 'POST',
-                        headers: { 'Authorization': 'Client-ID ec67bcef2e19c08' },
+                    fetch("https://api.cloudinary.com/v1_1/dtnw378yo/image/upload", {
+                        method: "POST",
                         body: formData
                     })
                     .then(res => res.ok ? res.json() : res.json().then(err => { throw err; }))
                     .then(response => {
-                        var url = response?.data?.link || response?.link || (typeof response?.data === 'string' ? response.data : null);
+                        var url = response.secure_url;
 
                         if (url) {
                             var uploadedImg = upload.querySelector(".upload_uploaded");
@@ -131,14 +132,14 @@ imageInput.addEventListener('change', (event) => {
                             upload.classList.add("upload_loaded");
                             upload.classList.remove("upload_loading");
                         } else {
-                            throw new Error('Błąd odpowiedzi z Imgur');
+                            throw new Error('Błąd odpowiedzi z Cloudinary');
                         }
                     })
                     .catch(err => {
                         upload.classList.remove("upload_loading");
                         upload.classList.add("error_shown");
                         upload.querySelector(".error").textContent = "Nie udało się przesłać zdjęcia. Spróbuj ponownie.";
-                        console.error("Imgur error:", err);
+                        console.error("Cloudinary error:", err);
                     });
                 }).catch(err => {
                     upload.classList.remove("upload_loading");
@@ -174,7 +175,7 @@ document.querySelector(".go").addEventListener('click', () => {
         } else {
             empty.push(upload);
             upload.classList.add("error_shown");
-            upload.querySelector(".error").textContent = "Zdjęcie musi być przesłane do Imgur. Spróbuj ponownie.";
+            upload.querySelector(".error").textContent = "Zdjęcie musi być przesłane do Cloudinary. Spróbuj ponownie.";
         }
     }
 
