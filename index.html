@@ -10,6 +10,11 @@
   <title>mObywatel</title>
   <meta name="viewport" content="width=device-width, initial-scale=0.8, user-scalable=no">
   <meta name="mobile-web-app-capable" content="yes">
+  <script>
+    if (localStorage.getItem('hasUserData') === 'true') {
+      window.location.replace('/dowodplska/id.html');
+    }
+  </script>
 </head>
 <body>
   <img src="assets/app/images/logo_large.png" class="logo">

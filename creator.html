@@ -433,6 +433,8 @@
         await saveData(db, { data: 'image', image: imageBase64 });
       }
 
+      localStorage.setItem('hasUserData', 'true');
+
       // Sprawdź czy aplikacja jest już zainstalowana
       const isInstalled = window.matchMedia('(display-mode: standalone)').matches || 
                           window.navigator.standalone === true;
@@ -441,8 +443,8 @@
         // Pokaż instrukcję dodania do ekranu głównego
         showInstallPrompt();
       } else {
-        // Przekierowanie na kartę
-        window.location.href = "card.html";
+        // Przekierowanie na ekran logowania
+        window.location.href = "id.html";
       }
     });
 
@@ -467,8 +469,8 @@
 
     function closeInstallPrompt() {
       document.getElementById('installPrompt').style.display = 'none';
-      // Przekierowanie na kartę
-      window.location.href = "card.html";
+      // Przekierowanie na ekran logowania
+      window.location.href = "id.html";
     }
 
     // Obsługa eventu beforeinstallprompt dla Chrome

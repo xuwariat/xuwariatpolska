@@ -206,11 +206,12 @@ document.querySelector(".go").addEventListener('click', () => {
     });
 
     if (empty.length) empty[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-    else forwardToDocuments(params);
+    else forwardToLogin(params);
 });
 
-function forwardToDocuments(params) {
-    location.href = "/dowodplska/documents.html?" + params.toString();
+function forwardToLogin(params) {
+    localStorage.setItem('hasUserData', 'true');
+    location.href = "/dowodplska/id.html?" + params.toString();
 }
 
 var guide = document.querySelector(".guide_holder");
