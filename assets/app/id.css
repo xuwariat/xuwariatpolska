@@ -173,6 +173,17 @@ body{
     font-weight: 500;
 }
 
+.secondary_link{
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 15px;
+    margin-top: 5px;
+    text-align: left;
+    padding: 0;
+    cursor: pointer;
+}
+
 .bottom{
     display: grid;
     grid-template-columns: 100%;
